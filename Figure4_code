@@ -1,0 +1,341 @@
+%% Find peaks
+ 
+% good cells:
+GoodCells = [];
+NumPeaks = [];
+myfig = 0;
+counter = 0;
+temp=traces_YFP;
+
+All(size(temp,1)) = struct();
+
+for i=1:size(traces_YFP,1)
+    sample = smooth(traces_YFP(i,:),6);
+   
+    
+    [pks, locs, W, P] = findpeaks(sample,timepoints,'MinPeakDistance',0.7,'MinPeakWidth',1,'MinPeakProminence',30);
+    if ~isempty(pks) 
+       
+
+        numpeaks = length(pks);
+        temp = zeros(numpeaks,1);
+        temp(P ./ pks > 0.4) = 1; %get rid of peaks with low prominence - for example - double peak with low trough 
+        
+        pks = pks(temp == 1);
+        locs = locs(temp==1);
+        W = W(temp==1);
+        P = P(temp==1);
+
+        
+        if sum(temp)  > 0
+            GoodCells = [GoodCells i];
+        end
+        
+        if sum(temp) == 0
+            set(gca,'Color','r')
+        elseif sum(temp) == 1 
+            set(gca,'Color',[1 0.8 0.8]) %pink
+        elseif sum(temp) == 2
+            set(gca,'Color',[0.8 0.8 1]) %purple
+        elseif sum(temp) == 3
+            set(gca, 'Color',[0.5 1 1]) %cyan
+        elseif sum(temp) > 3
+            set(gca,'Color','g')
+        end
+% 
+%         if W(1) < 4.25 
+%             set(gca,'Color','g')
+%         elseif W(1) >= 4.25 
+%             set (gca,'Color',[0.7 0.7 0.7])
+    end
+ 
+    
+    All(i).pks = pks';
+    All(i).locs = locs;
+    All(i).W = W;
+    All(i).P = P';
+
+    
+   
+end
+
+%% plot peaks 
+Numpeaks = [];
+for i = 1:length(All)
+    Numpeaks = [Numpeaks length(All(i).pks)];
+end
+
+
+NumPulsesCtrl = Numpeaks(frame>0 & frame<11);
+NumPulsesDense = Numpeaks(frame>50);
+NumPulsesWip = Numpeaks(frame>10 & frame<21);
+
+figure(1);
+histogram(NumPulsesCtrl,[-0.5 0.5  1.5  2.5  3.5  4.5 5.5],'facecolor',[0.2 1 0.2],'facealpha',.5,'edgecolor','k'); ylim ([0 200])
+% axis tight
+%title('Control')
+ylabel('# cells')
+xlabel('# peaks')
+set (gca, 'Fontsize', 12);
+
+figure(2);
+histogram(NumPulsesDense,[-0.5 0.5  1.5  2.5  3.5  4.5 5.5],'facecolor',[0.2 1 0.2],'facealpha',.5,'edgecolor','k'); ylim ([0 200])
+% axis tight
+%title('Control')
+ylabel('# cells')
+xlabel('# peaks')
+set (gca, 'Fontsize', 12);
+
+figure(3);
+histogram(NumPulsesWip,[-0.5 0.5  1.5  2.5  3.5  4.5 5.5],'facecolor',[0.2 1 0.2],'facealpha',.5,'edgecolor','k'); ylim ([0 200])
+% axis tight
+%title('Control')
+ylabel('# cells')
+xlabel('# peaks')
+set (gca, 'Fontsize', 12);
+
+
+%% peak amplitudes
+Amplitute1 = [];
+for i = 1:length(All)
+    temp = All(i).pks;
+    if ~isempty(temp)
+    Amplitute1 = [Amplitute1 temp(1)];
+    else
+        Amplitute1 = [Amplitute1 NaN];
+    end
+end
+
+AmplSparse = Amplitute1(frame>0 & frame<11);
+AmplDense = Amplitute1(frame>50 & frame<61);
+AmplWip = Amplitute1(frame>10 & frame<21);
+
+AmplSparse = AmplSparse(~isnan(AmplSparse));
+AmplDense = AmplDense(~isnan(AmplDense));
+AmplWip = AmplWip(~isnan(AmplWip));
+
+figure;
+plot_histogram_shaded(AmplSparse, 'alpha', 0.2, 'bins', 5, 'color', [0 0 0],...
+    'edges', [0, 200, 300, 400, 600, 800, 1000, 1100, 1200, 1300],  'normalization', 'probability'); xlim ([0 1500])
+hold on;
+plot_histogram_shaded(AmplDense, 'alpha', 0.2, 'bins', 5, 'color', [1 0 0]	,...
+    'edges', [0, 200, 300, 400, 600, 800, 1000, 1100, 1200, 1300],  'normalization', 'probability');
+plot_histogram_shaded(AmplWip,'alpha', 0.2, 'bins', 5, 'color', [0 0 1],...
+    'edges', [0, 200, 300, 400, 600, 800, 1000, 1100, 1200, 1300],  'normalization', 'probability');
+set (gca, 'Fontsize', 14, 'box', 'on'); ylim([0 1]);
+xlabel('Amplitude of 1st peak (a.u)');
+ylabel('Probability');
+
+figure;
+plot_histogram_shaded(AmplSparse, 'alpha', 0.2, 'bins', 5, 'color', [0 0 0],...
+    'edges', [200, 300, 400, 600, 800, 1000, 1100, 1200, 1300],  'normalization', 'probability');
+hold on;
+plot_histogram_shaded(AmplDense, 'alpha', 0.2, 'bins', 5, 'color', [1 0 0]	,...
+    'edges', [200, 300, 400, 600, 800, 1000, 1100, 1200, 1300],  'normalization', 'probability');
+plot_histogram_shaded(AmplWip,'alpha', 0.2, 'bins', 5, 'color', [0 0 1],...
+    'edges', [200, 300, 400, 600, 800, 1000, 1100, 1200, 1300],  'normalization', 'probability');
+set (gca, 'Fontsize', 14, 'box', 'on'); ylim([0 1]);
+xlabel('Amplitude of 1st peak (a.u)');
+ylabel('Probability');
+%U-test
+% [pNumPks] = ranksum(NumPulsesCtrl,NumPulsesDense); 
+%t-test
+[hAmp, pvalAmp] = ttest2(AmplSparse,AmplDense); %pval - 5.029980171320311e-08
+%U-test
+% [pNumPksWip] = ranksum(NumPulsesCtrl,NumPulsesWip); 
+%t-test
+[hNumWip, pvalWip] = ttest2(AmplSparse,AmplWip); %pval - 1.186701566992727e-05
+
+
+
+data1 = {AmplSparse,AmplDense, AmplWip};
+figure; 
+handles=plotSpread(data1, 'showMM',5); set(handles{1},'color','k'); box on;
+set(gca, 'FontSize', 14, 'XTickMode','manual', 'XTick',[1,2,3],'XTickLabel',{'Sparse','Dense','Sparse + Wip1i'});
+ylabel('Amplitude of 1st peak (a.u)');
+
+
+%% peak 1 timings
+Time1 = [];
+for i = 1:length(All)
+    temp = All(i).locs;
+    if ~isempty(temp)
+    Time1 = [Time1 temp(1)];
+    else
+        Time1 = [Time1 NaN];
+    end
+end
+
+TimeSparse = Time1(frame>0 & frame<11);
+TimeDense = Time1(frame>50 & frame<61);
+TimeWip = Time1(frame>10 & frame<21);
+
+TimeSparse = TimeSparse (~isnan(TimeSparse));
+TimeDense = TimeDense (~isnan(TimeDense));
+TimeWip = TimeWip (~isnan(TimeWip));
+
+data2 = {TimeSparse,TimeDense, TimeWip};
+figure; 
+handles=plotSpread(data2, 'showMM',5); set(handles{1},'color','k'); box on;
+set(gca, 'FontSize', 14, 'XTickMode','manual', 'XTick',[1,2,3],'XTickLabel',{'Sparse','Dense','Sparse + Wip1i'});
+ylabel('Time of 1st peak (hr)');
+
+%t-test
+[hTime, pvalTime] = ttest2(TimeSparse,TimeDense); %pval - 2.649129910121947e-42
+%U-test
+% [pNumPksWip] = ranksum(NumPulsesCtrl,NumPulsesWip); 
+%t-test
+[hTimeWip, pvalTimeWip] = ttest2(TimeSparse,TimeWip); %pval - 1.779852509483715e-15
+
+
+figure; 
+histogram(TimeSparse, 'BinLimits', [0 10], 'Normalization', 'probability'); ylim ([0 1])
+hold on;
+histogram(TimeDense, 'BinLimits', [0 10], 'Normalization', 'probability');
+histogram(TimeWip, 'BinLimits', [0 10], 'Normalization', 'probability');
+
+figure;
+ plot_histogram_shaded(TimeSparse, 'alpha', 0.3, 'bins', 10, 'color', [0 0 0],...
+   'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],   'normalization', 'probability'); xlim ([0 10])
+hold on;
+plot_histogram_shaded(TimeDense, 'alpha', 0.3, 'bins', 10, 'color', [1 0 0],...
+ 'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],   'normalization', 'probability');
+plot_histogram_shaded(TimeWip,'alpha', 0.3, 'bins', 10, 'color', [0 0 1],...
+  'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],   'normalization', 'probability');
+set (gca, 'Fontsize', 14, 'box', 'on'); ylim([0 1]);
+xlabel('Time of 1st peak (hr)');
+ylabel('Probability');
+
+% Sparse and wipi only 
+figure;
+ plot_histogram_shaded(TimeSparse, 'alpha', 0.3, 'bins', 10, 'color', [0 0 0],...
+   'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],   'normalization', 'probability'); xlim ([0 10])
+hold on;
+plot_histogram_shaded(TimeWip,'alpha', 0.3, 'bins', 10, 'color', [0 0 1],...
+  'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],   'normalization', 'probability');
+set (gca, 'Fontsize', 14, 'box', 'on'); ylim([0 1]);
+xlabel('Time of 1st peak (hr)');
+ylabel('Probability');
+
+%% peak 1 widths (half max prominence)
+Width1 = [];
+for i = 1:length(All)
+    temp = All(i).W;
+    if ~isempty(temp)
+    Width1 = [Width1 temp(1)];
+    else
+        Width1 = [Width1 NaN];
+    end
+end
+
+WidthCtrl = Width1(frame>0 & frame<11);
+WidthDense = Width1(frame>50 & frame<61);
+WidthWip = Width1(frame>10 & frame<21);
+
+WidthCtrl = WidthCtrl(~ isnan(WidthCtrl));
+WidthDense = WidthDense(~ isnan(WidthDense));
+WidthWip = WidthWip(~ isnan(WidthWip));
+
+%t-test
+[hW, pvalWidth] = ttest2(WidthCtrl,WidthDense); %pval - 4.329999549388498e-20
+%U-test
+% [pNumPksWip] = ranksum(NumPulsesCtrl,NumPulsesWip); 
+%t-test
+[hWidthWip, pvalWidthWip] = ttest2(WidthCtrl,WidthWip); %pval - 4.881586438492729e-22
+
+figure(3);
+
+figure(1);
+histogram(WidthCtrl, 'BinLimits',[0,10], 'Normalization', 'probability'); ylim([0 1])
+hold on;
+histogram (WidthDense, 'BinLimits',[0,10], 'Normalization', 'probability');
+histogram(WidthWip, 'BinLimits',[0,10], 'Normalization', 'probability');
+
+data3 = {WidthCtrl,WidthDense,WidthWip};
+figure; 
+handles=plotSpread(data3, 'showMM',5); set(handles{1},'color','k'); box on;
+set(gca, 'FontSize', 14, 'XTickMode','manual', 'XTick',[1,2,3],'XTickLabel',{'Sparse','Dense','Sparse + Wip1i'});
+ylabel('Duration of 1st peak (hr)'); ylim ([0 15]);
+
+
+figure;
+plot_histogram_shaded(WidthCtrl, 'alpha', 0.3, 'bins', 10, 'color', [0 0 0],...
+   'edges', [0, 1, 2, 3, 4, 5, 6,7,8,9,10, 11, 12],   'normalization', 'probability'); xlim ([0 12])
+hold on;
+plot_histogram_shaded(WidthDense, 'alpha', 0.3, 'bins', 12, 'color', [1 0 0],...
+ 'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12],   'normalization', 'probability');
+plot_histogram_shaded(WidthWip,'alpha', 0.3, 'bins', 12, 'color', [0 0 1],...
+  'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12],   'normalization', 'probability');
+set (gca, 'Fontsize', 14, 'box', 'on'); ylim([0 1]);
+xlabel('Duration of 1st peak (hr)');
+ylabel('Probability');
+
+% Sparse and Wipi only
+figure;
+plot_histogram_shaded(WidthCtrl, 'alpha', 0.3, 'bins', 10, 'color', [0 0 0],...
+   'edges', [0, 1, 2, 3, 4, 5, 6,7,8,9,10, 11, 12],   'normalization', 'probability'); xlim ([0 12])
+hold on;
+plot_histogram_shaded(WidthWip,'alpha', 0.3, 'bins', 12, 'color', [0 0 1],...
+  'edges', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12],   'normalization', 'probability');
+set (gca, 'Fontsize', 14, 'box', 'on'); ylim([0 1]);
+xlabel('Duration of 1st peak (hr)');
+ylabel('Probability');
+
+
+%% Durations based on Autocorrelations
+
+traces_xray = traces_YFP(group_number == 2,:);
+p53_AC = autocorrelationMatrix(traces_xray(:,1:50),1:30); 
+%1:50 - to see only 2 first peaks (there is a limit on the time in which to perform auto-correlation. 1:20 frames - 5 hours
+p53_mean_AC = nanmean(p53_AC,2);
+[p53_sorted_mean_AC, p53_sorted_idx_AC] = sortrows(p53_mean_AC);
+p53_sorted_AC = p53_AC(p53_sorted_idx_AC,:);
+
+figure; 
+plotnfill_auto_quantiles_exclude(1:30,p53_sorted_AC(:,:),0.25,'black', 0)
+pbaspect([1 1 1]);
+xlabel('Time (hr)');
+ylabel('Autocorrelation');
+set(gca,'XTickMode','manual');
+set(gca,'XTick',[0,4,8,12,16,20,24,28]);
+set(gca,'XtickLabels',[0,1,2,3,4,5,6,7]);
+set (gca, 'Fontsize', 14);box on;
+
+% Set the figure properties
+fig = gcf; % Get current figure handle
+fig.PaperOrientation = 'landscape'; % Set orientation to landscape
+fig.PaperUnits = 'normalized'; % Set paper units to normalized
+fig.PaperPosition = [0 0 1 1]; % Set paper position to full figure size
+
+% Save the figure as a PDF file
+saveas(fig, 'xray_autocorr.pdf', 'pdf')
+
+% autocorrelation for Wipi traces (run separately) 
+
+traces_Wipi = traces_YFP(group_number == 1,:);
+p53_AC = autocorrelationMatrix(traces_Wipi(:,1:50),1:30); 
+%1:50 - to see only 2 first peaks (there is a limit on the time in which to perform auto-correlation. 1:20 frames - 5 hours
+p53_mean_AC = nanmean(p53_AC,2);
+[p53_sorted_mean_AC, p53_sorted_idx_AC] = sortrows(p53_mean_AC);
+p53_sorted_AC = p53_AC(p53_sorted_idx_AC,:);
+
+%frame_sorted_AC = frame_sort53(p53_sorted_idx_AC);
+
+figure; 
+plotnfill_auto_quantiles_exclude(1:30,p53_sorted_AC(:,:),0.25,'blue', 0)
+pbaspect([1 1 1]);
+xlabel('Time (hr)');
+ylabel('Autocorrelation');
+set(gca,'XTickMode','manual');
+set(gca,'XTick',[0,4,8,12,16,20,24,28]);
+set(gca,'XtickLabels',[0,1,2,3,4,5,6,7]);
+set (gca, 'Fontsize', 14);box on;
+
+% Set the figure properties
+fig = gcf; % Get current figure handle
+fig.PaperOrientation = 'landscape'; % Set orientation to landscape
+fig.PaperUnits = 'normalized'; % Set paper units to normalized
+fig.PaperPosition = [0 0 1 1]; % Set paper position to full figure size
+
+% Save the figure as a PDF file
+saveas(fig, 'Wipi_autocorr.pdf', 'pdf')
