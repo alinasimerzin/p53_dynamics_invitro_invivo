@@ -104,14 +104,25 @@ ylabel('Amplitude of 1st peak (a.u)');
 [pvalAmp, pvalAmp] = ttest2(AmplSparse,AmplDense); %pval:  3.476866803900628e-20
 
 figure;
- plot_histogram_shaded(AmplSparse, 'alpha', 0.3, 'bins', 10, 'color', [0 0 0],...
-   'edges', [-10, 0, 200, 400,600, 800, 1000, 1200, 1400, 1600, 1800],   'normalization', 'probability'); xlim ([0 1000])
+ plot_histogram_shaded(AmplSparse, 'alpha', 0.3, 'bins', 8, 'color', [0 0 0],...
+   'edges', [-10, 0, 400,800, 1200, 1600, 1800],   'normalization', 'probability'); xlim ([0 1800])
 hold on;
-plot_histogram_shaded(AmplDense, 'alpha', 0.3, 'bins', 10, 'color', [1 0 0],...
- 'edges', [-10, 0, 200, 400,600, 800, 1000, 1200, 1400, 1600, 1800],   'normalization', 'probability');
+plot_histogram_shaded(AmplDense, 'alpha', 0.3, 'bins', 8, 'color', [1 0 0],...
+ 'edges', [-10, 0, 400,800, 1200, 1400, 1600, 1800],   'normalization', 'probability');
 set (gca, 'Fontsize', 14, 'box', 'on'); ylim([0 1]);
-xlabel('Time of 1st peak (hr)');
+xlabel('Amplitude of 1st peak (a.u)');
 ylabel('Probability');
+yticks(0:0.2:1);
+xticks(0:400:1800);
+
+% Set the figure properties
+fig = gcf; % Get current figure handle
+fig.PaperOrientation = 'landscape'; % Set orientation to landscape
+fig.PaperUnits = 'normalized'; % Set paper units to normalized
+fig.PaperPosition = [0 0 1 1]; % Set paper position to full figure size
+
+% Save the figure as a PDF file
+saveas(fig, 'Amplitudes_Sparse_dense_distr.pdf', 'pdf')
 
 
 
